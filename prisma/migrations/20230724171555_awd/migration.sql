@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Track" ADD COLUMN "album" TEXT;
+ALTER TABLE "Track" ADD COLUMN "artist" TEXT;
+ALTER TABLE "Track" ADD COLUMN "image" TEXT;
+ALTER TABLE "Track" ADD COLUMN "name" TEXT;
+ALTER TABLE "Track" ADD COLUMN "uri" TEXT;
