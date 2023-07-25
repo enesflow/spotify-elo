@@ -6,4 +6,4 @@ COPY . .
 RUN npm run prisma:generate
 RUN npm run build
 EXPOSE 3000
-CMD ["node", "server/entry.fastify"]
+CMD ["node", "server/entry.express"]
