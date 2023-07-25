@@ -83,7 +83,8 @@ export const onGet: RequestHandler = async ({
 
 		await prisma.$disconnect();
 		throw redirect(302, "/app");
-	} catch {
+	} catch (e) {
+		console.error(e);
 		throw text(500, "Couldnt save user");
 	} finally {
 		await prisma.$disconnect();
