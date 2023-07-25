@@ -6,7 +6,7 @@ import { randomToken } from "~/helpers/token";
 export const onGet: RequestHandler = async ({
 	url,
 	env,
-	// redirect,
+	redirect,
 	cookie,
 	text,
 }) => {
@@ -82,7 +82,7 @@ export const onGet: RequestHandler = async ({
 		});
 
 		await prisma.$disconnect();
-		throw text(200, JSON.stringify(user));
+		throw redirect(302, "/app");
 	} catch {
 		throw text(500, "Couldnt save user");
 	} finally {
