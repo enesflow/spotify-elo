@@ -7,4 +7,4 @@ RUN touch ./prisma/dev.db
 RUN npm run prisma:migrate
 RUN npm run build
 EXPOSE 3000
-CMD ["node", "server/entry.express"]
+CMD ["node", "server/entry.fastify"]
