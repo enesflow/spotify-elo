@@ -3,7 +3,13 @@ import { PrismaClient } from "@prisma/client";
 import { encrypt } from "~/helpers/encrypt";
 import { randomToken } from "~/helpers/token";
 
-export const onGet: RequestHandler = async ({ url, env, redirect, cookie }) => {
+export const onGet: RequestHandler = async ({
+	url,
+	env,
+	// redirect,
+	cookie,
+	text,
+}) => {
 	const code = url.searchParams.get("code");
 	const error = url.searchParams.get("error");
 	if (error || !code) {
@@ -26,7 +32,7 @@ export const onGet: RequestHandler = async ({ url, env, redirect, cookie }) => {
 		body: new URLSearchParams({
 			grant_type: "authorization_code",
 			code: code!,
-			redirect_uri: "https://vazgec.kavcakar.tech/callback",
+			redirect_uri: `${env.get("ORIGIN")}/callback`,
 		}),
 	});
 
@@ -74,10 +80,14 @@ export const onGet: RequestHandler = async ({ url, env, redirect, cookie }) => {
 			maxAge: 60 * 60 * 24 * 365, // <- 1 year
 			path: "/",
 		});
+
+		await prisma.$disconnect();
+		throw text(200, JSON.stringify(user));
+	} catch {
+		throw text(500, "Couldnt save user");
 	} finally {
 		await prisma.$disconnect();
 	}
-
 	// redirect to main page
-	throw redirect(302, "/app");
+	//throw redirect(302, "/app");
 };

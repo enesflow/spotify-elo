@@ -176,7 +176,7 @@ export const useAddPlaylists = routeAction$(
 
 		await prisma.$disconnect();
 
-		throw requestEvent.redirect(302, "/app");
+		throw requestEvent.redirect(302, "/app/leaderboard");
 	},
 	zod$({
 		playlistIds: z.array(z.string()).nonempty(),

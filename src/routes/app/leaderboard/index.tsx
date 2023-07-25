@@ -105,7 +105,7 @@ export const STrack = component$<{
 export default component$(() => {
 	const { tracks } = useTracksLoader().value;
 	const user = useContext(CTX).user;
-	const maxElo = tracks[0].elo;
+	const maxElo = tracks.length ? tracks[0].elo : 0;
 	const compact = useSignal(false);
 
 	return (

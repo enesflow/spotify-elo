@@ -5,7 +5,7 @@ export const onGet: RequestHandler = async ({ redirect, env }) => {
 	// const state = randomToken();
 	const scope =
 		"user-library-read playlist-read-private playlist-read-collaborative";
-	const redirect_uri = "https://vazgec.kavcakar.tech/callback";
+	const redirect_uri = `${env.get("ORIGIN")}/callback`;
 
 	throw redirect(
 		302,

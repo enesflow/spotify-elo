@@ -18,38 +18,10 @@ import { Button } from "~/components/button/button";
 import { Column, Row } from "~/components/layout/layout";
 import { CTX } from "../layout";
 
-const BATCH_SIZE = 15 as const;
+const BATCH_SIZE = 20 as const;
 
-function generateRandomNumbers(count: number, max: number) {
-	function getRandomInt(min: number, max: number) {
-		return Math.floor(Math.random() * (max - min + 1)) + min;
-	}
-	const minDifference = 2 as const;
-
-	if (count > max || count <= 0) {
-		throw new Error("Invalid input: count should be between 1 and max.");
-	}
-
-	const result = [];
-	let previousNumber = getRandomInt(1, max);
-	result.push(previousNumber);
-
-	for (let i = 1; i < count; i++) {
-		let newNumber;
-
-		// Loop until a non-repeating and non-consecutive number is found
-		do {
-			newNumber = getRandomInt(0, max);
-		} while (
-			result.includes(newNumber) ||
-			Math.abs(newNumber - previousNumber) <= minDifference
-		);
-
-		result.push(newNumber);
-		previousNumber = newNumber;
-	}
-
-	return result;
+function getRandomInt(min: number, max: number) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 export const usePairsLoader = routeLoader$(async (requestEvent) => {
@@ -69,20 +41,28 @@ export const usePairsLoader = routeLoader$(async (requestEvent) => {
 
 	// we will present many questions, 2 by 2 (song1 vs song2)
 
-	const length = songs.length - 1; // -1 so that we dont go out of bounds
+	const length = songs.length; // -1 so that we dont go out of bounds
 
 	// select 20 pairs of songs
-	let pairs = [];
-	const randomNumbers = generateRandomNumbers(BATCH_SIZE, length);
-	for (let i = 0; i < randomNumbers.length; i++) {
-		const song1 = songs[randomNumbers[i]];
-		const song2 = songs[randomNumbers[i] + 1];
-		pairs.push([song1, song2]);
+	let pairs: [Track, Track][] = [];
+	let batchSize = BATCH_SIZE as number;
+	batchSize = Math.min(batchSize, length);
+	if (length > 1 && batchSize > 0) {
+		for (let i = 0; i < batchSize; i++) {
+			const rand = getRandomInt(0, length - 1);
+			const song1 = songs[rand];
+			const song2 = songs[rand + 1];
+			pairs.push([song1, song2]);
+		}
 	}
-	pairs = pairs.filter((pair) => pair[0] && pair[1]);
+	// make it unique
+	pairs = pairs.filter(
+		(pair, index) =>
+			pairs.findIndex((pair2) => pair2[0]!.id === pair[0]!.id) === index
+	);
 	await prisma.$disconnect();
 
-	return pairs;
+	return pairs as [Track, Track][];
 });
 
 export const chooseServer = server$(async function (data: {
@@ -180,13 +160,14 @@ export const useDeleteTrack = routeAction$(
 );
 
 export const STrack = component$<{
-	track: Track;
+	track: Track | undefined;
 	onClick$?: QRL<(...args: any[]) => any>;
 	deleteAction: ReturnType<typeof useDeleteTrack>;
 }>(({ track, onClick$, deleteAction }) => {
 	// return <li>{playlist.name}</li>;
 	// const checked = useSignal(allChecked.value);
 	const deleteClicked = useSignal(false);
+	if (!track) return <div>oops</div>;
 	return (
 		<span
 			// href={playlist.external_urls.spotify}
@@ -241,7 +222,7 @@ export const STrack = component$<{
 });
 
 export default component$(() => {
-	const pairs = usePairsLoader().value;
+	const pairs = usePairsLoader().value.filter((pair) => pair[0] && pair[1]);
 	const deleteAction = useDeleteTrack();
 	const index = useSignal(0);
 	const nav = useNavigate();
@@ -254,7 +235,6 @@ export default component$(() => {
 		if (skipClicked.value >= maxSkipClicked) {
 			return;
 		}
-		skipClicked.value++;
 		if (index.value + 1 >= pairs.length) {
 			await nav(); // <- Refresh
 			index.value = 0;
@@ -263,9 +243,13 @@ export default component$(() => {
 		index.value++;
 	});
 	const choose = $(async (trackIndex: 0 | 1) => {
-		console.log(user);
 		loading.value = true;
 		skipClicked.value = 0;
+		console.log({
+			trackId: pairs[index.value][trackIndex].name,
+			rivalId: pairs[index.value][1 - trackIndex].name,
+			user,
+		});
 		await chooseServer({
 			trackId: pairs[index.value][trackIndex].id,
 			rivalId: pairs[index.value][1 - trackIndex].id,
@@ -278,45 +262,59 @@ export default component$(() => {
 
 	return (
 		<div>
-			<Column class="gap-4 md:flex-row">
-				<STrack
-					track={pairs[index.value][0]}
-					onClick$={$(async () => {
-						await choose(0);
-					})}
-					deleteAction={deleteAction}
-				/>
-				<STrack
-					track={pairs[index.value][1]}
-					onClick$={$(async () => {
-						await choose(1);
-					})}
-					deleteAction={deleteAction}
-				/>
-			</Column>
-			<Row class="justify-center mt-2">
-				<Button
-					size="large"
-					color="purple"
-					onClick$={skip}
-					class="text-2xl"
-					disabled={
-						loading.value || skipClicked.value >= maxSkipClicked
-					}
-				>
-					{skipClicked.value >= maxSkipClicked ? (
-						<>
-							<LuLock class="mr-2" />
-							Seç artık
-						</>
-					) : (
-						<>
-							<LuSkipForward class="mr-2" />
-							Seçemem
-						</>
-					)}
-				</Button>
-			</Row>
+			{index.value < pairs.length ? (
+				<div>
+					<Column class="gap-4 md:flex-row">
+						<STrack
+							track={pairs[index.value][0]}
+							onClick$={$(async () => {
+								await choose(0);
+							})}
+							deleteAction={deleteAction}
+						/>
+
+						<STrack
+							track={pairs[index.value][1]}
+							onClick$={$(async () => {
+								await choose(1);
+							})}
+							deleteAction={deleteAction}
+						/>
+					</Column>
+
+					<Row class="justify-center mt-2">
+						<Button
+							size="large"
+							color="purple"
+							onClick$={$(async () => {
+								await skip();
+								skipClicked.value++;
+							})}
+							class="text-2xl"
+							disabled={
+								loading.value ||
+								skipClicked.value >= maxSkipClicked
+							}
+						>
+							{skipClicked.value >= maxSkipClicked ? (
+								<>
+									<LuLock class="mr-2" />
+									Seç artık
+								</>
+							) : (
+								<>
+									<LuSkipForward class="mr-2" />
+									Seçemem
+								</>
+							)}
+						</Button>
+					</Row>
+				</div>
+			) : (
+				<Column class="items-center justify-center">
+					Şarkılar bitti.
+				</Column>
+			)}
 		</div>
 	);
 });
