@@ -41,7 +41,7 @@ const start = async () => {
 
 	// Start the fastify server
 	// setting the "host"
-	await fastify.listen({ port: PORT, host: "0.0.0.0" });
+	await fastify.listen({ port: PORT, host: "https://vazgec.kavcakar.tech" });
 };
 
 start();
