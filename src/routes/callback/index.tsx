@@ -58,37 +58,44 @@ export const onGet: RequestHandler = async ({
 
 	const prisma = new PrismaClient();
 	try {
-		const user = await prisma.user.upsert({
-			where: { id: userData.id },
-			update: {
-				name: userData.display_name,
-				access_token: data.access_token,
-				refresh_token: data.refresh_token,
-			},
-			create: {
-				id: userData.id,
-				name: userData.display_name,
-				access_token: data.access_token,
-				refresh_token: data.refresh_token,
-				auth: randomToken(),
-			},
-		});
-		cookie.set("auth", encrypt(user.auth, env.get("ENCRYPTION_SECRET")), {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
-			sameSite: "lax",
-			maxAge: 60 * 60 * 24 * 365, // <- 1 year
-			path: "/",
-		});
-
-		await prisma.$disconnect();
-		throw redirect(302, "/app");
+		prisma.$connect();
 	} catch (e) {
 		console.error(e);
-		throw text(500, "Couldnt save user");
+		console.log(e);
+		throw text(500, JSON.stringify(e));
+	}
+	/* 	try { */
+	const user = await prisma.user.upsert({
+		where: { id: userData.id },
+		update: {
+			name: userData.display_name,
+			access_token: data.access_token,
+			refresh_token: data.refresh_token,
+		},
+		create: {
+			id: userData.id,
+			name: userData.display_name,
+			access_token: data.access_token,
+			refresh_token: data.refresh_token,
+			auth: randomToken(),
+		},
+	});
+	cookie.set("auth", encrypt(user.auth, env.get("ENCRYPTION_SECRET")), {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === "production",
+		sameSite: "lax",
+		maxAge: 60 * 60 * 24 * 365, // <- 1 year
+		path: "/",
+	});
+
+	await prisma.$disconnect();
+	throw redirect(302, "/app"); /* 
+	} catch (e) {
+		console.error(JSON.stringify(e));
+		throw text(500, JSON.stringify(e));
 	} finally {
 		await prisma.$disconnect();
-	}
+	} */
 	// redirect to main page
 	//throw redirect(302, "/app");
 };
