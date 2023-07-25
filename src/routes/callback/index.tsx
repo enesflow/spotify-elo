@@ -32,7 +32,7 @@ export const onGet: RequestHandler = async ({
 		body: new URLSearchParams({
 			grant_type: "authorization_code",
 			code: code!,
-			redirect_uri: `${env.get("ORIGIN")}/callback`,
+			redirect_uri: `${env.get("URL")}/callback`,
 		}),
 	});
 
