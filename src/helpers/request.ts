@@ -47,6 +47,7 @@ export const request = async <TResponse = unknown>(
 	requestEvent: RequestEventBase,
 	url: string,
 	{ body, ...customConfig }: RequestInit = {},
+	method?: "GET" | "POST" | "PUT" | "DELETE",
 	prisma?: PrismaClient | null,
 	user?: User | null
 ): Promise<TResponse> => {
@@ -62,7 +63,7 @@ export const request = async <TResponse = unknown>(
 		headers.Authorization = `Bearer ${access_token}`;
 	}
 	const config = {
-		method: body ? "POST" : "GET",
+		method: method ? method : body ? "POST" : "GET",
 		...customConfig,
 		headers: {
 			...headers,
@@ -78,11 +79,18 @@ export const request = async <TResponse = unknown>(
 		if (!prisma) prisma = new PrismaClient();
 		await refresh_token(prisma, user, requestEvent.env);
 		await prisma.$disconnect();
-		return request(requestEvent, url, customConfig, prisma, user);
+		return request(requestEvent, url, customConfig, method, prisma, user);
 	}
-	const data = await response.json();
-	if (response.ok) {
-		return data;
+	try {
+		const data = await response.json();
+		if (response.ok) {
+			return data;
+		}
+		console.error(data);
+		throw new Error(data.error.message);
+	} catch (error) {
+		/* console.error(error);
+		console.log(response.body);
+		throw new Error(error.message); */
 	}
-	throw new Error(data.error.message);
 };
