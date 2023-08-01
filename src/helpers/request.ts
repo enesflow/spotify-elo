@@ -89,8 +89,8 @@ export const request = async <TResponse = unknown>(
 		console.error(data);
 		throw new Error(data.error.message);
 	} catch (error) {
-		/* console.error(error);
+		console.error(error);
 		console.log(response.body);
-		throw new Error(error.message); */
+		throw new Error("Something went wrong.");
 	}
 };
