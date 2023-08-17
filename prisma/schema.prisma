@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+  // "file:./dev.db?connection_limit=1"
 }
 
 model User {
@@ -18,6 +19,7 @@ model User {
   auth          String     @unique
   answered      Int        @default(0)
   playlists     Playlist[] // <- ID of playlists
+  Track         Track[]
 }
 
 model Playlist {
@@ -25,14 +27,16 @@ model Playlist {
   spotifyId String?
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  Track     Track[]
 
+  // Track     Track[]
   @@unique([spotifyId, userId])
 }
 
 model Track {
   id        String  @id @default(uuid())
   spotifyId String?
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 
   name   String
   artist String
@@ -40,12 +44,12 @@ model Track {
   image  String
   url    String
 
-  elo        Float     @default(1000)
-  won        Int       @default(0)
-  lost       Int       @default(0)
-  playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-  playlistId String?
+  elo  Float @default(1000)
+  won  Int   @default(0)
+  lost Int   @default(0)
 
-  @@unique([spotifyId, playlistId])
+  // playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  // playlistId String?
+  @@unique([spotifyId, userId])
   @@index([elo(sort: Desc)]) // <- For fast sorting
 }

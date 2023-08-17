@@ -28,7 +28,7 @@ const start = async () => {
 	// Create the fastify server
 	// https://www.fastify.io/docs/latest/Guides/Getting-Started/
 	const fastify = Fastify({
-		logger: true,
+		logger: false,
 	});
 
 	// Enable compression

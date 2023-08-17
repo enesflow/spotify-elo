@@ -1,29 +1,16 @@
-import type { CSSProperties } from "@builder.io/qwik";
-import {
-	$,
-	component$,
-	createContextId,
-	Slot,
-	useContextProvider,
-	useSignal,
-} from "@builder.io/qwik";
-import {
-	globalAction$,
-	Link,
-	routeLoader$,
-	useLocation,
-} from "@builder.io/qwik-city";
-import type { User } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
-import { HiSparklesOutline } from "@qwikest/icons/heroicons";
-import { LuCrown, LuListPlus, LuMenu, LuMusic } from "@qwikest/icons/lucide";
-import { request } from "~/helpers/request";
-import type { Me } from "~/types/spotify";
-
-import type { RequestHandler } from "@builder.io/qwik-city";
-import { twMerge } from "tailwind-merge";
-import { Button } from "~/components/button/button";
-import { decrypt } from "~/helpers/encrypt";
+import type {CSSProperties} from "@builder.io/qwik";
+import {$, component$, createContextId, Slot, useContextProvider, useSignal,} from "@builder.io/qwik";
+import type {RequestHandler} from "@builder.io/qwik-city";
+import {globalAction$, Link, routeLoader$, useLocation,} from "@builder.io/qwik-city";
+import type {User} from "@prisma/client";
+import {PrismaClient} from "@prisma/client";
+import {HiSparklesOutline} from "@qwikest/icons/heroicons";
+import {twMerge} from "tailwind-merge";
+import {Button} from "~/components/button/button";
+import {MusicIcon} from "~/components/icons";
+import {decrypt} from "~/helpers/encrypt";
+import {request} from "~/helpers/request";
+import type {Me} from "~/types/spotify";
 
 export const CTX = createContextId<{ me: Me; user: User }>("me");
 
@@ -68,7 +55,9 @@ export const useUserLoader = routeLoader$(async (requestEvent) => {
 });
 
 export const useLogoutAction = globalAction$((_, { cookie, redirect }) => {
-	cookie.delete("auth");
+	cookie.delete("auth", {
+		path: "/",
+	});
 	throw redirect(302, "/");
 });
 
@@ -121,7 +110,7 @@ export default component$(() => {
 					href="/app"
 					class="flex items-center text-white text-3xl font-bold"
 				>
-					<LuMusic class="self-center mr-2" />
+					<MusicIcon class="self-center mr-2" />
 					Spotify ELO
 				</Link>
 				<div class="flex md:order-2 gap-x-2">
@@ -131,6 +120,7 @@ export default component$(() => {
 							height="40"
 							src={me.images[0].url}
 							class="rounded-lg"
+						 alt="profile"
 						/>
 						<Button
 							size="large"
@@ -151,7 +141,7 @@ export default component$(() => {
 					>
 						<span class="sr-only">Open main menu</span>
 
-						<LuMenu class="w-5 h-5" />
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
 					</button>
 				</div>
 				<div
@@ -161,7 +151,7 @@ export default component$(() => {
 				>
 					<ul
 						class={twMerge(
-							"flex flex-col p-4 mt-4 font-medium border rounded-lg md:p-0 md:flex-row md:space-x-2 md:text-sm lg:text-xl xl:text-2xl lg:space-x-8 md:mt-0 md:border-0",
+							"flex flex-col p-4 mt-4 font-medium border rounded-lg md:p-0 md:flex-row md:space-x-2 md:text-xl lg:text-xl xl:text-2xl lg:space-x-8 md:mt-0 md:border-0",
 							expanded.value && "text-2xl"
 						)}
 					>
@@ -170,11 +160,11 @@ export default component$(() => {
 							Çöz
 						</Item>
 						<Item href="/app/leaderboard" page={loc.url.pathname}>
-							<LuCrown class="mr-2" />
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
 							Liderlik Tablosu
 						</Item>
 						<Item href="/app/add" page={loc.url.pathname}>
-							<LuListPlus class="mr-2" />
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>
 							Şarkı Ekle
 						</Item>
 					</ul>

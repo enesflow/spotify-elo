@@ -1,22 +1,14 @@
-import type { QRL } from "@builder.io/qwik";
-import { $, component$, useContext, useSignal } from "@builder.io/qwik";
-import {
-	Link,
-	routeAction$,
-	routeLoader$,
-	server$,
-	useNavigate,
-	z,
-	zod$,
-} from "@builder.io/qwik-city";
-import type { Track, User } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
-import { LuHeart, LuLock, LuSkipForward, LuTrash } from "@qwikest/icons/lucide";
-import { SiSpotify } from "@qwikest/icons/simpleicons";
-import { twMerge } from "tailwind-merge";
-import { Button } from "~/components/button/button";
-import { Column, Row } from "~/components/layout/layout";
-import { CTX } from "../layout";
+import type {QRL} from "@builder.io/qwik";
+import {$, component$, useContext, useSignal, useTask$} from "@builder.io/qwik";
+import {globalAction$, Link, routeLoader$, server$, useNavigate, z, zod$,} from "@builder.io/qwik-city";
+import type {Track, User} from "@prisma/client";
+import {PrismaClient} from "@prisma/client";
+import {SiSpotify} from "@qwikest/icons/simpleicons";
+import {twMerge} from "tailwind-merge";
+import {Button} from "~/components/button/button";
+import {HeartIcon, QuestionMarkIcon, StarIcon, TrashIcon} from "~/components/icons";
+import {Column, Row} from "~/components/layout/layout";
+import {CTX} from "../layout";
 
 const BATCH_SIZE = 20 as const;
 
@@ -26,13 +18,11 @@ function getRandomInt(min: number, max: number) {
 
 export const usePairsLoader = routeLoader$(async (requestEvent) => {
 	const prisma = new PrismaClient();
-	const user = (await await requestEvent.sharedMap.get("user")) as User;
+	const user = (await requestEvent.sharedMap.get("user")) as User;
 
 	const songs = await prisma.track.findMany({
 		where: {
-			playlist: {
-				userId: user.id,
-			},
+			userId: user.id,
 		},
 		orderBy: {
 			elo: "desc",
@@ -69,6 +59,7 @@ export const chooseServer = server$(async function (data: {
 	trackId: string;
 	rivalId: string;
 	user: User;
+	amplify: boolean;
 }) {
 	const prisma = new PrismaClient();
 	const track = await prisma.track.findUnique({
@@ -89,9 +80,11 @@ export const chooseServer = server$(async function (data: {
 	const bw = 1 - aw;
 
 	// calculate new elo
-	const k = 32;
+	const k = data.amplify ? 128 : 32;
 	const da = k * (1 - aw);
 	const db = k * (0 - bw);
+
+	console.log("Incrementing elo by", da, db, "for", track.name, "vs", rival.name, "with", data.amplify ? "amplify" : "no amplify");
 
 	// update elo
 	await prisma.track.update({
@@ -144,7 +137,7 @@ export const chooseServer = server$(async function (data: {
 	};
 });
 
-export const useDeleteTrack = routeAction$(
+export const useDeleteTrack = globalAction$(
 	async (data) => {
 		const prisma = new PrismaClient();
 		await prisma.track.delete({
@@ -159,14 +152,48 @@ export const useDeleteTrack = routeAction$(
 	})
 );
 
+export const DeleteTrack = component$<{
+	trackId: string;
+	size?: "xsmall" | "large";
+	compact?: boolean;
+}>(({compact, trackId, size = "large"}) => {
+	const deleteAction = useDeleteTrack();
+	const deleteClicked = useSignal<boolean>(false);
+	useTask$(({track}) => {
+		track(() => trackId);
+		deleteClicked.value = false;
+	})
+	return <Button
+		size={size}
+		color={deleteClicked.value ? "red" : "pink"}
+		buttonClass="gap-1"
+		class={
+			compact ? "aspect-square" : ""
+		}
+		onClick$={$(async () => {
+			if (deleteClicked.value) {
+				await deleteAction.submit({
+					trackId: trackId,
+				});
+				deleteClicked.value = false;
+			} else deleteClicked.value = true;
+		})}
+	>
+		{
+			deleteClicked.value ? <QuestionMarkIcon/> : <TrashIcon/>
+		}
+			{!compact && (deleteClicked.value ? "Emin misin?" : "Sil")}
+	</Button>
+});
+
 export const STrack = component$<{
 	track: Track | undefined;
-	onClick$?: QRL<(...args: any[]) => any>;
+	select$?: QRL<(...args: any[]) => any>;
+	selectAmp$?: QRL<(...args: any[]) => any>;
 	deleteAction: ReturnType<typeof useDeleteTrack>;
-}>(({ track, onClick$, deleteAction }) => {
+}>(({track, select$, selectAmp$}) => {
 	// return <li>{playlist.name}</li>;
 	// const checked = useSignal(allChecked.value);
-	const deleteClicked = useSignal(false);
 	if (!track) return <div>oops</div>;
 	return (
 		<span
@@ -176,7 +203,7 @@ export const STrack = component$<{
 			)}
 		>
 			<img
-				class="box-border object-cover rounded-t-lg h-96 md:h-full md:max-w-[50%] md:rounded-none md:rounded-l-lg"
+				class="box-border object-cover rounded-t-lg aspect-[2/1] md:aspect-square md:h-full w-full md:max-h-full md:max-w-[50%] md:w-auto md:rounded-none md:rounded-l-lg"
 				src={track.image}
 				alt={track.name}
 				width="640"
@@ -185,36 +212,26 @@ export const STrack = component$<{
 			/>
 			<div class="flex flex-col justify-between p-4 leading-normal">
 				<Link
-					class="hover:text-[#1DB954] text-gray-900 mb-2 text-2xl font-bold tracking-tight flex items-center justify-start"
+					class="hover:text-[#1DB954] text-gray-900 mb-2 text-2xl font-bold tracking-tight flex items-center md:justify-start justify-center"
 					href={track.url}
 					target="_blank"
 				>
-					<SiSpotify class="mr-2 min-w-[2rem]" />
+					<SiSpotify class="mr-2 min-w-[2rem]"/>
 					{track.name}
 				</Link>
 				<p class="mb-3 font-normal text-gray-700 text-xl">
 					{track.artist}
 				</p>
-				<div class="flex gap-2">
-					<Button size="large" color="green" onClick$={onClick$}>
-						<LuHeart class="mr-2" />
-						Bunu seçtim
+				<div class="flex gap-2 flex-wrap">
+					<Button size="large" buttonClass="gap-1" color="green" onClick$={select$}>
+						<StarIcon/>
+						Bu güzel
 					</Button>
-					<Button
-						size="large"
-						color={deleteClicked.value ? "red" : "pink"}
-						onClick$={$(async () => {
-							if (deleteClicked.value) {
-								await deleteAction.submit({
-									trackId: track.id,
-								});
-								deleteClicked.value = false;
-							} else deleteClicked.value = true;
-						})}
-					>
-						<LuTrash class="mr-2" />
-						{deleteClicked.value ? "Emin misin?" : "Sil"}
+					<Button size="large" buttonClass="gap-1" color="blue" onClick$={selectAmp$}>
+						<HeartIcon/>
+						Bu çok daha güzel (x4)
 					</Button>
+					<DeleteTrack trackId={track.id}/>
 				</div>
 			</div>
 		</span>
@@ -242,7 +259,7 @@ export default component$(() => {
 		}
 		index.value++;
 	});
-	const choose = $(async (trackIndex: 0 | 1) => {
+	const choose = $(async (trackIndex: 0 | 1, amplify: boolean) => {
 		loading.value = true;
 		skipClicked.value = 0;
 		console.log({
@@ -254,6 +271,7 @@ export default component$(() => {
 			trackId: pairs[index.value][trackIndex].id,
 			rivalId: pairs[index.value][1 - trackIndex].id,
 			user,
+			amplify,
 		});
 		user.answered++;
 		await skip();
@@ -267,16 +285,22 @@ export default component$(() => {
 					<Column class="gap-4 md:flex-row">
 						<STrack
 							track={pairs[index.value][0]}
-							onClick$={$(async () => {
-								await choose(0);
+							select$={$(async () => {
+								choose(0, false);
+							})}
+							selectAmp$={$(async () => {
+								choose(0, true);
 							})}
 							deleteAction={deleteAction}
 						/>
 
 						<STrack
 							track={pairs[index.value][1]}
-							onClick$={$(async () => {
-								await choose(1);
+							select$={$(async () => {
+								choose(1, false);
+							})}
+							selectAmp$={$(async () => {
+								choose(1, true);
 							})}
 							deleteAction={deleteAction}
 						/>
@@ -298,12 +322,12 @@ export default component$(() => {
 						>
 							{skipClicked.value >= maxSkipClicked ? (
 								<>
-									<LuLock class="mr-2" />
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 									Seç artık
 								</>
 							) : (
 								<>
-									<LuSkipForward class="mr-2" />
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
 									Seçemem
 								</>
 							)}

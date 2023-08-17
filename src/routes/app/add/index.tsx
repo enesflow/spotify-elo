@@ -1,23 +1,17 @@
-import { $, component$, useComputed$, useStore } from "@builder.io/qwik";
-import type { RequestEventBase } from "@builder.io/qwik-city";
-import {
-	Link,
-	routeAction$,
-	routeLoader$,
-	server$,
-	z,
-	zod$,
-} from "@builder.io/qwik-city";
-import type { User } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
-import { LuCheckCircle2, LuChevronRight } from "@qwikest/icons/lucide";
-import { SiSpotify } from "@qwikest/icons/simpleicons";
-import { twMerge } from "tailwind-merge";
-import { Button } from "~/components/button/button";
-import { protectedRoute } from "~/helpers/auth";
-import { request } from "~/helpers/request";
-import type { Me, Playlist, SavedTracks, Track } from "~/types/spotify";
-import { type Playlists } from "~/types/spotify";
+import {$, component$, useComputed$, useStore} from "@builder.io/qwik";
+import type {RequestEventBase} from "@builder.io/qwik-city";
+import {Link, routeAction$, routeLoader$, server$, z, zod$,} from "@builder.io/qwik-city";
+import type {User} from "@prisma/client";
+import {PrismaClient} from "@prisma/client";
+import {LuChevronRight} from "@qwikest/icons/lucide";
+import {SiSpotify} from "@qwikest/icons/simpleicons";
+import {twMerge} from "tailwind-merge";
+import {Button} from "~/components/button/button";
+import {CheckIcon} from "~/components/icons";
+import {protectedRoute} from "~/helpers/auth";
+import {request} from "~/helpers/request";
+import type {Me, Playlist, SavedTracks, Track} from "~/types/spotify";
+import {type Playlists} from "~/types/spotify";
 
 export const onRequest = protectedRoute;
 
@@ -144,21 +138,20 @@ export const useAddPlaylists = routeAction$(
 			dbPlaylistsPromises.map(async (dbPlaylist, index) => {
 				if (dbPlaylist.status === "fulfilled") {
 					const playlist = playlists[index];
-					const playlistId = dbPlaylist.value.id;
 					await Promise.all(
 						playlist.tracks.items.map(async (item) => {
 							const track = item.track;
 							await prisma.track.upsert({
 								where: {
-									spotifyId_playlistId: {
+									spotifyId_userId: {
 										spotifyId: track.id,
-										playlistId,
-									},
+										userId: user.id,
+									}
 								},
 								update: {},
 								create: {
 									spotifyId: track.id,
-									playlistId,
+									userId: user.id,
 									name: track.name,
 									artist: track.artists
 										.map((a) => a.name)
@@ -203,7 +196,7 @@ export const SPlaylist = component$<{
 			})}
 		>
 			<img
-				class="box-border object-cover rounded-t-lg h-96 md:h-full md:max-w-[12rem] md:rounded-none md:rounded-l-lg"
+				class="!aspect-square box-border object-cover rounded-t-lg h-auto w-full md:max-w-[12rem] rounded-none md:rounded-l-lg"
 				src={playlist.images[0].url}
 				alt={playlist.name}
 				width="640"
@@ -219,7 +212,7 @@ export const SPlaylist = component$<{
 					<SiSpotify class="mr-2" />
 					{playlist.name}
 					{store[playlist.id] && (
-						<LuCheckCircle2 class="ml-2 text-rose-500 font-extrabold " />
+						<CheckIcon class="ml-2 text-rose-500 font-extrabold " />
 					)}
 				</Link>
 				{playlist.description && (
@@ -277,7 +270,7 @@ export default component$(() => {
 						});
 					})}
 				>
-					<LuCheckCircle2 class="mr-2" />
+					<CheckIcon class="mr-2" />
 					{allChecked.value ? "Hepsini Kaldır" : "Hepsini Seç"}
 				</Button>
 				<h1 class="text-xl md:text-3xl font-bold tracking-tight">
@@ -297,10 +290,10 @@ export default component$(() => {
 					})}
 				>
 					Devam et
-					<LuChevronRight class="ml-2" />
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><line x1="6" x2="6" y1="4" y2="20"/><polygon points="10,4 20,12 10,20"/></svg>
 				</Button>
 			</div>
-			<div class="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2 lg:grid-cols-3">
+			<div class="grid gap-4 pt-4 grid-cols-2 lg:grid-cols-3">
 				{playlists.items.map((playlist) => (
 					<SPlaylist
 						store={checked}

@@ -24,7 +24,7 @@ const colors = {
 };
 
 const sizes = {
-	xsmall: "py-0.5 px-1",
+	xsmall: "py-1 px-1.5 text-sm",
 	small: "py-1 px-1.5",
 	medium: "py-1 px-2",
 	large: "py-2 px-3",
@@ -81,7 +81,6 @@ export const Button = component$<ButtonProps & HTMLProps>((props) => {
 		>
 			{(loading.value || props.loading) && (
 				<Spinner
-					size={props.size}
 					color={props.color === "none" ? "black" : props.color}
 				/>
 			)}
