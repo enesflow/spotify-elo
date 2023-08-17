@@ -120,7 +120,7 @@ export default component$(() => {
 							height="40"
 							src={me.images[0].url}
 							class="rounded-lg"
-						 alt="profile"
+							alt="profile"
 						/>
 						<Button
 							size="large"

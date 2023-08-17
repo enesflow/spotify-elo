@@ -3,7 +3,6 @@ import type {RequestEventBase} from "@builder.io/qwik-city";
 import {Link, routeAction$, routeLoader$, server$, z, zod$,} from "@builder.io/qwik-city";
 import type {User} from "@prisma/client";
 import {PrismaClient} from "@prisma/client";
-import {LuChevronRight} from "@qwikest/icons/lucide";
 import {SiSpotify} from "@qwikest/icons/simpleicons";
 import {twMerge} from "tailwind-merge";
 import {Button} from "~/components/button/button";
