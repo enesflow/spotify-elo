@@ -4,7 +4,7 @@ import { stringify } from "querystring";
 export const onGet: RequestHandler = async ({ redirect, env }) => {
 	// const state = randomToken();
 	const scope =
-		"user-library-read playlist-read-private playlist-read-collaborative user-library-modify";
+		"user-library-read playlist-read-private playlist-read-collaborative user-library-modify playlist-modify-public playlist-modify-private";
 	const redirect_uri = `${env.get("URL")}/callback`;
 
 	throw redirect(

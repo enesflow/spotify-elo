@@ -99,7 +99,7 @@ export interface Track {
 	is_local: boolean;
 }
 
-interface Album {
+export interface Album {
 	album_type: string;
 	total_tracks: number;
 	available_markets: string[];
@@ -120,6 +120,19 @@ interface Album {
 	popularity: number;
 	album_group: string;
 	artists: Artist[];
+	tracks: {
+		href: string;
+		limit: number;
+		next: string;
+		offset: number;
+		previous: string;
+		total: number;
+		items: ({
+			added_at: string;
+			added_by: User;
+			is_local: boolean;
+		} & Track)[];
+	}
 }
 
 interface Artist {

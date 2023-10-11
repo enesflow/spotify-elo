@@ -41,3 +41,4 @@ lerna-debug.log*
 !.yarn/releases
 
 prisma/dev.db
+/pnpm-lock.yaml
